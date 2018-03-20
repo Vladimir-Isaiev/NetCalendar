@@ -1,0 +1,15 @@
+﻿@model IEnumerable<string>
+<div class="alert alert-danger">
+    
+           <p>Следующие ошибки были обнаружены:</p>
+            <ul>
+                @foreach (string error in Model)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+ 
+    
+</div>
+
+

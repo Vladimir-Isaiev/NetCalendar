@@ -1,0 +1,55 @@
+﻿@model IEnumerable<NetCalendar.WebUI.Models.Identity.AppUser>
+
+@{
+    ViewBag.Title = "Users";
+}
+
+<h2>Сотрудники департамента</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            ID
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.UserName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Email)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Id)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.UserName)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Email)
+        </td>
+
+        <td>
+
+        @using (Html.BeginForm("Delete", "Admin", new { id = item.Id }))
+        {
+        @Html.ActionLink("Изменить", "Edit", new { id = item.Id }, new { @class = "btn btn-primary btn-xs", style = "float: left; margin-right: 10px" })
+        <button class="btn btn-danger btn-xs" type="submit">  Delete </button>
+        }
+        </td>
+    </tr>
+        }
+
+    }
+
+</table>
+
+
+

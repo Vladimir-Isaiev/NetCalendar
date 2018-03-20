@@ -1,0 +1,216 @@
+﻿@model NetCalendar.WebUI.Models.Identity.CreateModel
+
+
+
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="~/Content/jqx.base.css" type="text/css" />
+
+
+    <title>Регистрация</title>
+</head>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+<div class="form-horizontal">
+    <hr />
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    <div class="form-group">
+        <label class="control-label col-md-2">Manager</label>
+        <div class="col-md-10">
+            <div>@Html.CheckBox("IsManager", false)</div>
+        </div>
+    </div>
+
+    <div class="form-group" id="new-dep" hidden>
+        @Html.LabelFor(model => model.Department, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.Department, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Department, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group" id="dep">
+        @Html.LabelFor(model => model.Department, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownList("ExistDepartment", (IEnumerable<SelectListItem>)ViewData["Dep"], " ", new { @class = "form-control" })
+        </div>
+    </div>
+
+    <div id='content' class="form-group">
+        <label class="control-label col-md-2">Select Name:</label>
+        <div class="col-md-10">
+            <div id='jqxWidget'></div>
+        </div>
+    </div>
+
+
+    <div class="form-group" id="new-name" hidden>
+        @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <input type="checkbox" id="emailcheck" aria-label="..." checked="checked">
+                        </span>
+                        @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="basic-addon1">...</span>
+                        <input type="password" class="form-control" id="Password" name="Password" placeholder="Password" aria-describedby="basic-addon1">
+                        @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="submit" value="Create" class="btn btn-default" />
+        </div>
+    </div>
+</div>
+}
+
+
+<div>
+    @Html.ActionLink("Index", "Home");
+</div>
+
+@section Scripts{
+    @{
+        <script>
+            var dataAdapter;
+
+            $(document).ready(function () {
+                $("#jqxWidget").jqxDropDownList({
+                    template: "warning",
+                    selectedIndex: -1,
+                    displayMember: "SimplyName",
+                    valueMember: "Email",
+                    width: 200,
+                    height: 25,
+                    filterable: true
+                });
+
+
+                $("#jqxWidget").on('select', function (event) {
+                    if (event.args) {
+                        var item = event.args.item;
+
+                        if (item) {
+                            $("#Name").val(item.label);
+                            $("#Email").val(item.value);
+                        }
+                    }
+                });
+
+            });
+
+            $("#ExistDepartment").change(function () {
+                var department = $("#dep option:selected").text();
+                var url = "/Account/GetUsers/?department=" + department;
+
+                //if ($("#jqxWidget > div").html() != null) {
+                //    $("#jqxWidget").jqxDropDownList('clear');
+                //    //$("#jqxWidget").empty();
+                //}
+                var source =
+                    {
+                        datatype: "json",
+                        datafields: [
+                            { name: 'SimplyName' },
+                            { name: 'Email' }
+                        ],
+                        url: url,
+                        async: true
+                    };
+
+                dataAdapter = new $.jqx.dataAdapter(source);
+                $("#jqxWidget").jqxDropDownList({ source: dataAdapter });
+            });
+        </script>
+        <script>
+
+
+            $('#IsManager').click(function () {
+                if ($(this).prop('checked')) {
+                    $('#new-dep').show();
+                    $('#new-name').show();
+                    $('#dep').hide();
+                    $('#content').hide();
+                }
+                else {
+                    $('#new-dep').hide();
+                    $('#new-name').hide();
+                    $('#dep').show();
+                    $('#content').show();
+                }
+            }
+            );
+
+            $('#dep').change(function () {
+                $('#Department').val($("#dep option:selected").text());
+                //alert($("#dep option:selected").text());
+            }
+            );
+
+
+            $('#emailcheck').click(function () {
+                if ($(this).prop('checked')) {
+                    //$('#Email').prop("disabled", false);
+                    $('#Email').val("");
+                }
+                else {
+                    //$('#Email').prop("disabled", true);
+                    $('#Email').val("not@not.com");
+                }
+            }
+            );
+
+            
+
+            
+
+
+        </script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/demos.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxcore.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxdata.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxbuttons.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxscrollbar.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxlistbox.js"></script>
+        <script type="text/javascript" src="~/Scripts/jqwidgets/jqxdropdownlist.js"></script>
+    }
+}
+
+
+

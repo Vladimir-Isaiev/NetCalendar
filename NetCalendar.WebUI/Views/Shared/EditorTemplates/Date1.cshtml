@@ -1,0 +1,43 @@
+﻿@model DateTime?
+@using System.Threading;
+@{
+    string strCulture = (Request.Cookies["NetCalendar"] != null) ? Request.Cookies["NetCalendar"].Value : "uk-UA";
+}
+
+
+@switch (strCulture)
+{
+    case "en-US":
+        @Html.TextBox("", (Model.HasValue ? Model.Value.ToShortDateString() : string.Empty), new
+        {
+            @class = "datepicker form-control",
+            data_date_format = System.Globalization.CultureInfo.CurrentCulture.
+                                                         DateTimeFormat.ShortDatePattern.ToLower()
+        })
+        break;
+
+    @*case "ja-JP":
+        @Html.TextBox("", (Model.HasValue ? Model.Value.ToString("yyyy/MM月/dd") : string.Empty), new
+        {
+            @class = "datepicker form-control",
+            data_date_format = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern.ToLower()
+        })
+        break;*@
+
+    @*case "zh-CN":
+        @Html.TextBox("", (Model.HasValue ? Model.Value.ToString("yyyy/M/d") : string.Empty), new
+        {
+            @class = "datepicker form-control",
+            data_date_format = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern.ToLower()
+        })
+        break;*@
+
+
+    default:
+        @Html.TextBox("", (Model.HasValue ? Model.Value.ToString("dd/MM/yyyy") : string.Empty), new
+        {
+            @class = "datepicker form-control",
+            data_date_format = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern.ToLower()
+        })
+        break;
+}
