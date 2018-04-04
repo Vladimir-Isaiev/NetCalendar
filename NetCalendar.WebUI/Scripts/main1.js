@@ -47,6 +47,13 @@
             url: "/home/GetEvents",
             success: function (data) {
                 $.each(data, function (i, v) {
+
+                    var s = moment(v.Start).toDate();
+                    var e = moment(v.End).toDate();
+
+                    s.setHours(s.getHours() + currentTimeZoneOffset);
+                    e.setHours(e.getHours() + currentTimeZoneOffset);
+
                     events.push({
                         Id: v.Id,
                         googleEventId: v.GoogleEventId,
@@ -54,8 +61,8 @@
                         title: v.Subject,
                         subject: v.Subject,
                         description: v.EmployeesString,
-                        start: moment(v.Start),
-                        end: v.End != null ? moment(v.End) : null,
+                        start: s,
+                        end: e,
                         color: v.ThemeColor,
                         destinationLat: v.DestLat,
                         destinationLong: v.DestLong,
@@ -88,6 +95,7 @@
             events: events,
             eventClick: function (calEvent, jsEvent, view) {
                 selectedEvent = calEvent;
+                
                 $('#myModal #eventSubject').text(calEvent.subject);
 
                 var $description = $('<div/>');
@@ -98,7 +106,7 @@
                 }
 
                 $description.append($('<p/>').html('<b>Department:</b>' + calEvent.department));
-                $description.append($('<p/>').html('<b>Description:</b>' + calEvent.description));
+                $description.append($('<p/>').html('<b>Adress:</b>' + calEvent.adress));
 
                 if (calEvent.destinationLat != null || calEvent.destinationLong != null) {
                     $description.append($('<p/>').html('<b>Des Lat:</b>' + calEvent.destinationLat));
@@ -140,15 +148,14 @@
             },
             editable: true,
             eventDrop: function (event) {
-                
-
+               
                 var data = {
                     Id: event.Id,
                     GoogleEventId: event.googleEventId,
                     Department: event.department,
                     Subject: event.subject,
-                    Start: event.start.format(formatDate),
-                    End: event.end.format(formatDate),
+                    Start: event.start,
+                    End: event.end,
                     Description: event.description,
                     ThemeColor: event.color,
                     DestLat: event.destinationLat,
@@ -301,21 +308,30 @@
             return;
         }
 
-        
+        var s = startDate.getHours();
+        var e = endDate.getHours();
+
+        var rs = s - currentTimeZoneOffset;
+        var er = e - currentTimeZoneOffset;
+
        
+        startDate.setHours(rs);
+        endDate.setHours(er);
+
+        alert(moment(startDate).toISOString());
 
         var data = {
             Id: $('#hdId').val(),
             GoogleEventId: $('#hdGoogleEventId').val().trim(),
             Department: $('#txtDepartment').val().trim(),
             Subject: $('#txtSubject').val().trim(),
-            Start: $('#txtStart').val().trim(),
-            End: $('#txtEnd').val().trim(),
+            Start: moment(startDate).toISOString(),
+            End: moment(endDate).toISOString(),
             Description: $('#txtDescription').val(),
             ThemeColor: $('#ddThemeColor').val(),
             DestLat: $('#hdDestinationLat').val(),
             DestLong: $('#hdDestinationLong').val(),
-            Offset: currentTimeZoneOffset,
+            Offset: 0,
             Adress: $("#adr").val(),
             allDay: false
         }

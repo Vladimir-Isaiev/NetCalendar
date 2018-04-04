@@ -241,8 +241,6 @@
     <Compile Include="IdentityInfrastructure\IdentityHelpers.cs" />
     <Compile Include="Models\CultureModel.cs" />
     <Compile Include="Models\DateTimeD.cs" />
-    <Compile Include="Models\Departments.cs" />
-    <Compile Include="Models\Destination.cs" />
     <Compile Include="Models\Identity\AppRole.cs" />
     <Compile Include="Models\Identity\AppUser.cs" />
     <Compile Include="Models\Identity\UserViewModels.cs" />

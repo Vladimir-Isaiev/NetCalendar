@@ -309,8 +309,7 @@ namespace NetCalendar.DataLayer
             }
             #endregion
 
-            //заголовок и адрес храним в поле summary
-            googleEvent.Summary = dataEvent.Subject + " @" + dataEvent.Adress;
+            
 
             //название департамента в description
             googleEvent.Description = dataEvent.Department;
@@ -320,6 +319,8 @@ namespace NetCalendar.DataLayer
             googleEvent.End = new EventDateTime() { DateTime = end };
             googleEvent.Location = dataEvent.DestLat + " " + dataEvent.DestLong;
 
+            //заголовок и адрес храним в поле summary
+            googleEvent.Summary = dataEvent.Subject + " @" + dataEvent.Adress;
 
             #region прикрепляем к событию сотрудников --- Attendees
             if (dataEvent.Employees.Count>0)
@@ -371,8 +372,10 @@ namespace NetCalendar.DataLayer
 
             @event.Department = googleEvent.Description;
             @event.Subject = subjectAndAdress[0];
+
             @event.Start = GetDateTime(googleEvent.Start);
             @event.End = GetDateTime(googleEvent.End);
+
             @event.ThemeColor = GetCol(googleEvent.ColorId);
             @event.GoogleEventId = googleEvent.Id;
             @event.DestLat = geolat;
