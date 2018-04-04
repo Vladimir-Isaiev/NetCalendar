@@ -48,11 +48,11 @@
             success: function (data) {
                 $.each(data, function (i, v) {
 
-                    var s = moment(v.Start).toDate();
-                    var e = moment(v.End).toDate();
+                    var startTime = moment(v.Start).toDate();
+                    var endTime = moment(v.End).toDate();
 
-                    s.setHours(s.getHours() + currentTimeZoneOffset);
-                    e.setHours(e.getHours() + currentTimeZoneOffset);
+                    startTime.setHours(startTime.getHours() + currentTimeZoneOffset);
+                    endTime.setHours(endTime.getHours() + currentTimeZoneOffset);
 
                     events.push({
                         Id: v.Id,
@@ -61,8 +61,8 @@
                         title: v.Subject,
                         subject: v.Subject,
                         description: v.EmployeesString,
-                        start: s,
-                        end: e,
+                        start: startTime,
+                        end: endTime,
                         color: v.ThemeColor,
                         destinationLat: v.DestLat,
                         destinationLong: v.DestLong,
@@ -308,18 +308,16 @@
             return;
         }
 
-        var s = startDate.getHours();
-        var e = endDate.getHours();
+        
 
-        var rs = s - currentTimeZoneOffset;
-        var er = e - currentTimeZoneOffset;
+        var startHours = startDate.getHours() - currentTimeZoneOffset;
+        var endHours = endDate.getHours() - currentTimeZoneOffset;
 
        
-        startDate.setHours(rs);
-        endDate.setHours(er);
+        startDate.setHours(startHours);
+        endDate.setHours(endHours);
 
-        alert(moment(startDate).toISOString());
-
+       
         var data = {
             Id: $('#hdId').val(),
             GoogleEventId: $('#hdGoogleEventId').val().trim(),
