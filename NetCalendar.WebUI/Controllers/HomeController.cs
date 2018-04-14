@@ -12,6 +12,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
@@ -62,12 +63,11 @@ namespace NetCalendar.WebUI.Controllers
 
 
         [HttpPost]
-        public async System.Threading.Tasks.Task<JsonResult> SaveMeetingAsync(Meeting newMeeting)
+        public async Task<JsonResult> SaveMeetingAsync(Meeting newMeeting)
         {
             bool status = false;
             List<string> employeesNames;
             string message = "";
-
 
             List<Employee> employees = new List<Employee>();
             List<AppUser> users = UserManager.GetUsersByDepartment(newMeeting.Department);
@@ -76,8 +76,7 @@ namespace NetCalendar.WebUI.Controllers
             {
                 char[] toTrim = { ' ', ',' };
                 employeesNames = newMeeting.Description.Trim(toTrim).Split(',').ToList();
-
-
+                
                 employeesNames.ForEach(delegate (string name)
                 {
                     name = name.Trim() + "#" + newMeeting.Department;
@@ -106,8 +105,7 @@ namespace NetCalendar.WebUI.Controllers
                     if (!temp.Equals(ex.Message))
                         message += "--->" + ex.Message;
                 }
-            }
-            
+            }            
             return new JsonResult { Data = new { status = status, mess = message } };
         }
 
@@ -133,8 +131,6 @@ namespace NetCalendar.WebUI.Controllers
                         message += "--->" + ex.Message;
                 }
             }
-            
-
             return new JsonResult { Data = new { status = status, mes = message } };
         }
 
@@ -149,23 +145,23 @@ namespace NetCalendar.WebUI.Controllers
         public JsonResult GetMeetingsDuration(string start, string end)//"09/03/2018 0:00"   DD/MM/YYYY
         {            
             CultureInfo provider = new CultureInfo("en-UK");
-            DateTime dStart = DateTime.ParseExact(start, "dd/MM/yyyy HH:mm", provider);
-            DateTime dEnd = DateTime.ParseExact(end, "dd/MM/yyyy HH:mm", provider);
+            DateTime dateStart = DateTime.ParseExact(start, "dd/MM/yyyy HH:mm", provider);
+            DateTime dateEnd = DateTime.ParseExact(end, "dd/MM/yyyy HH:mm", provider);
             
-            int summ;
-            string _summa;
+            int workedHours;
+            string message;
             if (CurrentUser.IsManager)
             {
-                summ = netCalendarService.GetMeetingsDuration(CurrentUser.Department, dStart, dEnd);
-                _summa = "Number of hours worked by the department " + CurrentUser.Department + ": "+summ.ToString();
+                workedHours = netCalendarService.GetMeetingsDuration(CurrentUser.Department, dateStart, dateEnd);
+                message = $"Number of hours worked by the department {CurrentUser.Department}: {workedHours}";
             }
             else
             {
-                summ = netCalendarService.GetMeetingsDuration(CurrentUser.ToEmployee(), dStart, dEnd);
-                _summa = "Number of hours worked by " + CurrentUser.SimplyName + ": " + summ.ToString();
+                workedHours = netCalendarService.GetMeetingsDuration(CurrentUser.ToEmployee(), dateStart, dateEnd);
+                message = $"Number of hours worked by {CurrentUser.SimplyName}: {workedHours}";
             }
 
-            return new JsonResult { Data = new { summa = _summa } };
+            return new JsonResult { Data = new { summa = message } };
         }
 
 
@@ -191,8 +187,7 @@ namespace NetCalendar.WebUI.Controllers
             {
                 string userName = HttpContext.User.Identity.Name;
                 List<AppUser> users = UserManager.Users.ToList();
-                AppUser user = users.Find(u => u.UserName.Equals(userName));
-                return user;
+                return users.Find(u => u.UserName.Equals(userName));
             }
         }
     }

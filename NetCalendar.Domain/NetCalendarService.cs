@@ -8,13 +8,15 @@ namespace NetCalendar.Domain
 {
     public class NetCalendarService
     {
+        private readonly INotificationService notificationService;
         private readonly IServiceMeeting repoMeeting;
 
-        public NetCalendarService(IServiceMeeting serviceMeeting)
+        public NetCalendarService(INotificationService notificationService, IServiceMeeting serviceMeeting)
         {
+            this.notificationService = notificationService;
             repoMeeting = serviceMeeting;
         }
-
+       
 
         public List<Meeting> GetMeetingsOfEmployee(Employee employee, DateTime start, DateTime end)
         {
@@ -44,9 +46,11 @@ namespace NetCalendar.Domain
 
 
 
-        public Task<string> SaveUpdateEventAsync(Meeting ev)
+        public async Task<string> SaveUpdateEventAsync(Meeting meeting)
         {
-           return repoMeeting.SaveUpdateMeetingAsync(ev);
+            await notificationService.SendInvitesAsync(meeting);
+
+            return repoMeeting.SaveUpdateMeeting(meeting);
 
         }
 

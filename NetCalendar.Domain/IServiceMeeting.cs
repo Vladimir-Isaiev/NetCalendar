@@ -10,7 +10,7 @@ namespace NetCalendar.Domain
     {
         List<Meeting> GetMeetings(string nameEmp, string department, DateTime start, DateTime end);
 
-        Task<string> SaveUpdateMeetingAsync(Meeting ev);
+        string SaveUpdateMeeting(Meeting meeting);
         string DeleteMeeting(string eventId);
     }
 }

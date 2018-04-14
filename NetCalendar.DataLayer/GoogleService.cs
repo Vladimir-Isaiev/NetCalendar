@@ -20,7 +20,6 @@ namespace NetCalendar.DataLayer
 {
     public class GoogleService
     {
-        INotificationService notificationService;
         CalendarService service;
 
         private Dictionary<string, string> GoogleColors;
@@ -28,7 +27,6 @@ namespace NetCalendar.DataLayer
        
         public GoogleService(string path_dir, INotificationService notificationService)
         {
-            this.notificationService = notificationService;
             service = GetService(path_dir);
             
             GoogleColors = new Dictionary<string, string>()
@@ -98,7 +96,7 @@ namespace NetCalendar.DataLayer
             return service;
         }
 
-        public List<dataMeeting> GetEvents(string nameEmployee, string department, DateTime start, DateTime end)
+        public List<dataMeeting> GetMeetings(string nameEmployee, string department, DateTime start, DateTime end)
         {
             List<dataMeeting> meetings = new List<dataMeeting>();
             List<googleEvent> googleEventlist = new List<googleEvent>();
@@ -131,7 +129,7 @@ namespace NetCalendar.DataLayer
         }
 
 
-        public async Task<string> SaveUpdateEventAsync(dataMeeting meeting)
+        public string SaveUpdateEvent(dataMeeting meeting)
         {
             googleEvent gEvent = GetEvent(meeting.GoogleEventId);
             googleEvent newGoogleEvent = new googleEvent();
@@ -145,7 +143,6 @@ namespace NetCalendar.DataLayer
             EventsResource.InsertRequest insertRequest = service.Events.Insert(newGoogleEvent, "primary");
             newGoogleEvent = insertRequest.Execute();
 
-            await notificationService.SendInvitesAsync(meeting);
             return newGoogleEvent.Summary;
         }
 
@@ -307,7 +304,7 @@ namespace NetCalendar.DataLayer
             {
                 meeting.Adress = " ";
             }
-            meeting.Adress = meeting.Start.ToString();
+            
             //получаем прикрепленных сотрудников
             if (googleEvent.Attendees!=null)
             {

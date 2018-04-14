@@ -21,13 +21,13 @@ namespace NetCalendar.Repo
 
         public List<Meeting> GetMeetings(string nameEmp, string department, DateTime start, DateTime end)
         {
-            return googleService.GetEvents(nameEmp, department, start, end);
+            return googleService.GetMeetings(nameEmp, department, start, end);
         }
 
 
-        public async Task<string> SaveUpdateMeetingAsync(Meeting ev)
+        public string SaveUpdateMeeting(Meeting meeting)
         {
-            return await googleService.SaveUpdateEventAsync(ev);
+            return googleService.SaveUpdateEvent(meeting);
         }
 
         public string DeleteMeeting(string eventId)
