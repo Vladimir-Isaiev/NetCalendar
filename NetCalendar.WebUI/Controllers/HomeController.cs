@@ -147,18 +147,11 @@ namespace NetCalendar.WebUI.Controllers
 
         [HttpPost]
         public JsonResult GetMeetingsDuration(string start, string end)//"09/03/2018 0:00"   DD/MM/YYYY
-        {
-            //DateTime dStart = new DateTime(
-            //    Int32.Parse(start.Substring(6, 4)),
-            //    Int32.Parse(start.Substring(3, 2)),
-            //    Int32.Parse(start.Substring(0, 2))
-            //    );
-            DateTime dStart = DateTime.ParseExact(start, "DD/MM/YYY hh:mm", null);
-            DateTime dEnd = new DateTime(
-               Int32.Parse(end.Substring(6, 4)),
-               Int32.Parse(end.Substring(3, 2)),
-               Int32.Parse(end.Substring(0, 2))
-               );
+        {            
+            CultureInfo provider = new CultureInfo("en-UK");
+            DateTime dStart = DateTime.ParseExact(start, "dd/MM/yyyy HH:mm", provider);
+            DateTime dEnd = DateTime.ParseExact(end, "dd/MM/yyyy HH:mm", provider);
+            
             int summ;
             string _summa;
             if (CurrentUser.IsManager)

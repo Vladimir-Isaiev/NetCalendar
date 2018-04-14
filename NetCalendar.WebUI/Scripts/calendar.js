@@ -2,7 +2,7 @@
     var events = [];
     var selectedEvent = null;
     var formatDate;
-    var defaultFormat = "DD/MM/YYYY H:mm";
+    var defaultFormat = "DD/MM/YYYY HH:mm";
 
     var culture = $('#language').val().substr(3, 2);
     
