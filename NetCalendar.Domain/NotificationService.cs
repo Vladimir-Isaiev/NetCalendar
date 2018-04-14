@@ -7,13 +7,13 @@ using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NetCalendar.DataLayer
+namespace NetCalendar.Domain
 {
     public class NotificationService : INotificationService
     {
-        public async Task SendInvitesAsync(Event dataEvent)
+        public async Task SendInvitesAsync(Meeting dataMeeting)
         {
-            if (dataEvent.Employees.Count > 0)
+            if (dataMeeting.Employees.Count > 0)
             {
                 SmtpClient smtpClient = new SmtpClient("smtp.gmail.com", 587);
 
@@ -23,16 +23,16 @@ namespace NetCalendar.DataLayer
                 smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
                 smtpClient.EnableSsl = true;
 
-                foreach (Employee empl in dataEvent.Employees)
+                foreach (Employee empl in dataMeeting.Employees)
                 {
                     if (empl.Email == null || empl.Email.Split('@')[1].Equals("not.com") || empl.Email.Equals("netcalendarmanager@gmail.com"))
                         continue;
 
-                    string message = CreateMessage(dataEvent, empl.Name);
+                    string message = CreateMessage(dataMeeting, empl.Name);
 
                     MailMessage mail = new MailMessage("netcalendarmanager@gmail.com",
                         empl.Email,
-                        "New event in NetCalendar " + dataEvent.Start.ToString(),
+                        "New event in NetCalendar " + dataMeeting.Start.ToString(),
                         message);
 
                     mail.IsBodyHtml = false;
@@ -43,22 +43,15 @@ namespace NetCalendar.DataLayer
         }
 
 
-        private string CreateMessage(Event dataEvent, string name)
+        private string CreateMessage(Meeting dataMeeting, string name)
         {
-            //double _offset = (double)(dataEvent.Offset * (-1));
-            //DateTime tempS = GetDateTime(gEvent.Start);
-            //tempS = tempS.AddHours(_offset);
-
-            //DateTime tempE = GetDateTime(gEvent.End);
-            //tempE = tempE.AddHours(_offset);
-
             return String.Format(
                 "Уважаемый {0}!!!\nНовое событие --- {1}  адрес: {2}\nНачало --- {3}\nКонец --- {4}\nПосмотреть на сайте:  {5} ",
                 name,
-                dataEvent.Subject,
-                dataEvent.Adress,
-                dataEvent.Start.ToString(),
-                dataEvent.End.ToString(),
+                dataMeeting.Subject,
+                dataMeeting.Adress,
+                dataMeeting.Start.ToString(),
+                dataMeeting.End.ToString(),
                 "https://netcalendarweb.azurewebsites.net/"
                 );
         }

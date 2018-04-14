@@ -8,15 +8,15 @@ namespace NetCalendar.Domain
 {
     public class NetCalendarService
     {
-        private readonly IServiceEvent repoEvent;
+        private readonly IServiceMeeting repoMeeting;
 
-        public NetCalendarService(IServiceEvent repoEvent)
+        public NetCalendarService(IServiceMeeting serviceMeeting)
         {
-            this.repoEvent = repoEvent;
+            repoMeeting = serviceMeeting;
         }
 
 
-        public List<Event> GetEventsOfEmployee(Employee employee, DateTime start, DateTime end)
+        public List<Meeting> GetMeetingsOfEmployee(Employee employee, DateTime start, DateTime end)
         {
             DateTime _start = start;
             DateTime _end = end;
@@ -26,10 +26,10 @@ namespace NetCalendar.Domain
             if(end == null)
                 _end = DateTime.Now.AddDays(365);
 
-            return repoEvent.GetEvents(employee.Name, employee.Department, _start, _end);
+            return repoMeeting.GetMeetings(employee.Name, employee.Department, _start, _end);
         }
 
-        public List<Event> GetEventsOfDepartment(string department, DateTime start, DateTime end)
+        public List<Meeting> GetMeetingsOfDepartment(string department, DateTime start, DateTime end)
         {
             DateTime _start = start;
             DateTime _end = end;
@@ -39,56 +39,52 @@ namespace NetCalendar.Domain
             if (end == null)
                 _end = DateTime.Now.AddDays(365);
 
-            return repoEvent.GetEvents(null, department, _start, _end);
+            return repoMeeting.GetMeetings(null, department, _start, _end);
         }
 
 
 
-        public Task<string> SaveUpdateEventAsync(Event ev)
+        public Task<string> SaveUpdateEventAsync(Meeting ev)
         {
-           return repoEvent.SaveUpdateEventAsync(ev);
+           return repoMeeting.SaveUpdateMeetingAsync(ev);
 
         }
 
-        public string DeleteEvent(string idEvent, string department)
+        public string DeleteMeeting(string idEvent, string department)
         {
-            return repoEvent.DeleteEvent(idEvent);
+            return repoMeeting.DeleteMeeting(idEvent);
         }
 
-        public int SumEventDepartment(string department, DateTime start, DateTime end)
+        public int GetMeetingsDuration(string department, DateTime start, DateTime end)
         {
-            int summ;
             double sum = 0;
             TimeSpan timeSpan;
-            List<Event> events = GetEventsOfDepartment(department, start, end);
+            List<Meeting> meetings = GetMeetingsOfDepartment(department, start, end);
 
-            foreach(Event ev in events)
+            foreach(Meeting m in meetings)
             {
-                timeSpan = ev.End - ev.Start;
+                timeSpan = m.End - m.Start;
                 sum += timeSpan.TotalHours;
             }
-
-            summ = (int)sum;
-            return summ;
+                        
+            return (int)sum;
         }
 
 
 
-        public int SumEventUser(Employee emp, DateTime start, DateTime end)
+        public int GetMeetingsDuration(Employee emp, DateTime start, DateTime end)
         {
-            int summ;
-            double sum = 0;
+            double Meetingshours = 0;
             TimeSpan timeSpan;
-            List<Event> events = GetEventsOfEmployee(emp, start, end);
+            List<Meeting> events = GetMeetingsOfEmployee(emp, start, end);
 
-            foreach (Event ev in events)
+            foreach (Meeting ev in events)
             {
                 timeSpan = ev.End - ev.Start;
-                sum += timeSpan.TotalHours;
+                Meetingshours += timeSpan.TotalHours;
             }
 
-            summ = (int)sum;
-            return summ;
+            return (int)Meetingshours;
         }
     }
 }

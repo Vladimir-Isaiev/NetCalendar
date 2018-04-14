@@ -33,19 +33,12 @@ namespace NetCalendar.WebUI
 
         public static void RegisterTypes(IUnityContainer container)
         {
-
-            //String nameOrConnectionString = "IdentityDb";
-            //String nameOrConnectionString = "IdentityDbAzure";
-
-
-
-            //GoogleService
             String path_dir = HttpRuntime.AppDomainAppPath;
 
             InjectionConstructor googleServiceConstructor =
                 new InjectionConstructor(new GoogleService(path_dir, new NotificationService()));
 
-            container.RegisterType<IServiceEvent, GoogleRepo>(googleServiceConstructor);
+            container.RegisterType<IServiceMeeting, GoogleRepo>(googleServiceConstructor);
 
             container.RegisterType<INotificationService, NotificationService>();
 

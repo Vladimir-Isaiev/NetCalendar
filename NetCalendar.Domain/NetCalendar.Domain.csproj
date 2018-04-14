@@ -78,10 +78,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Employee.cs" />
-    <Compile Include="Event.cs" />
+    <Compile Include="Meeting.cs" />
     <Compile Include="INotificationService.cs" />
-    <Compile Include="IServiceEvent.cs" />
+    <Compile Include="IServiceMeeting.cs" />
     <Compile Include="NetCalendarService.cs" />
+    <Compile Include="NotificationService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

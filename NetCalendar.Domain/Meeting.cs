@@ -7,9 +7,14 @@ using System.Web;
 
 namespace NetCalendar.Domain
 {
-    public class Event
+    public class Meeting
     {
-         public String Subject { get; set; }
+        public Meeting()
+        {
+            Employees = new List<Employee>();
+        }
+
+        public String Subject { get; set; }
 
         public string Department { get; set; }
 
@@ -31,26 +36,6 @@ namespace NetCalendar.Domain
         public int Offset { get; set; }
 
         public ICollection<Employee> Employees { get; set; }
-
-        public string EmployeesString
-        {
-            get
-            {
-                string employees = "";
-                foreach (Employee emp in Employees)
-                {
-                    employees += emp.Name + "\n";
-                }
-                return employees;
-            }
-            private set { }
-            
-        }
-    
-        public Event()
-        {
-            Employees = new List<Employee>();
-        }
     }
 
     

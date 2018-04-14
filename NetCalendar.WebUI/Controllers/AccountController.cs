@@ -17,23 +17,18 @@ namespace NetCalendar.WebUI.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly NetCalendarService repository;
+        private readonly NetCalendarService netCalendarService;
 
-        public AccountController(NetCalendarService repo)
+        public AccountController(NetCalendarService service)
         {
-            repository = repo;
+            netCalendarService = service;
         }
 
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
             ViewBag.returnUrl = returnUrl;
-            ViewData["Dep"] = from deprtmentName in UserManager.GetDepartments()
-                              select new SelectListItem
-                              {
-                                  Text = deprtmentName,
-                                  Value = deprtmentName
-                              };
+            ViewData["Dep"] = DepartmentList();
             return View();
         }
 
@@ -45,6 +40,7 @@ namespace NetCalendar.WebUI.Controllers
         public async Task<ActionResult> Login(LoginModel details, string returnUrl)
         {
             string userName;
+
             if (details.Name == null)
                 userName = details.Department;
             else
@@ -82,12 +78,7 @@ namespace NetCalendar.WebUI.Controllers
         {
             ViewBag.returnUrl = returnUrl;
 
-            ViewData["Dep"] = from deprtmentName in UserManager.GetDepartments()
-                                select new SelectListItem
-                                {
-                                    Text = deprtmentName,
-                                    Value = deprtmentName
-                                };
+            ViewData["Dep"] = DepartmentList();
             return View();
         }
 
@@ -154,11 +145,11 @@ namespace NetCalendar.WebUI.Controllers
 
         private async Task UpdateEventsAsync(AppUser existUser)
         {
-            List<Event> userEvents = repository.GetEventsOfEmployee(existUser.ToEmployee(), DateTime.Now.AddDays(0), DateTime.Now.AddDays(365));
+            List<Meeting> userEvents = netCalendarService.GetMeetingsOfEmployee(existUser.ToEmployee(), DateTime.Now.AddDays(0), DateTime.Now.AddDays(365));
             if(userEvents.Count!=0)
             {
-                foreach (Event ev in userEvents)
-                    await repository.SaveUpdateEventAsync(ev);
+                foreach (Meeting ev in userEvents)
+                    await netCalendarService.SaveUpdateEventAsync(ev);
             }
         }
 
@@ -199,6 +190,22 @@ namespace NetCalendar.WebUI.Controllers
         {
             List<AppUser> empl = UserManager.GetUsersByDepartment(department);
             return new JsonResult { Data = empl, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+        }
+
+        private IEnumerable<SelectListItem> DepartmentList()
+        {
+            IEnumerable<SelectListItem> selectListItems = new List<SelectListItem>();
+
+            selectListItems = from deprtmentName in UserManager.GetDepartments()
+                              select new SelectListItem
+                              {
+                                  Text = deprtmentName,
+                                  Value = deprtmentName
+                              };
+
+
+            return selectListItems;
+
         }
     }
 }

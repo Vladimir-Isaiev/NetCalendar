@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 
 using colorName = System.Drawing.Color;
-using dataEvent = NetCalendar.Domain.Event;
+using dataMeeting = NetCalendar.Domain.Meeting;
 using googleEvent = Google.Apis.Calendar.v3.Data.Event;
           
 namespace NetCalendar.DataLayer
@@ -23,11 +23,33 @@ namespace NetCalendar.DataLayer
         INotificationService notificationService;
         CalendarService service;
 
+        private Dictionary<string, string> GoogleColors;
+
+       
         public GoogleService(string path_dir, INotificationService notificationService)
         {
             this.notificationService = notificationService;
+            service = GetService(path_dir);
+            
+            GoogleColors = new Dictionary<string, string>()
+            {
+                {"1", "CornflowerBlue" },
+                {"2", "Green" },
+                {"3", "DarkOrchid" },
+                {"4", "HotPink" },
+                {"5", "Goldenrod" },
+                {"6", "Orange" },
+                {"7", "Blue" },
+                {"8", "DimGray" },
+                {"9", "DarkSlateBlue" },
+                {"10", "SeaGreen" },
+                {"11", "Red" }
+            };
+        }
+
+        private CalendarService GetService(string path_dir)
+        {
             UserCredential credential = null;
-            string _path_dir;
             string secret_file;
             string error;
 
@@ -35,10 +57,7 @@ namespace NetCalendar.DataLayer
             string[] Scopes = { CalendarService.Scope.Calendar };
             string ApplicationName = "Calendar Net";
             
-
-
-
-            _path_dir = path_dir;
+            
             secret_file = Path.Combine(path_dir, "client_secret.json");
             string credentialPath = Path.Combine(path_dir, "credentials");
 
@@ -55,8 +74,14 @@ namespace NetCalendar.DataLayer
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credentialPath, true)).Result;
+
+                service = new CalendarService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName,
+                });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 
                 error = ex.Message;
@@ -67,20 +92,15 @@ namespace NetCalendar.DataLayer
                     if (!temp.Equals(ex.Message))
                         error += ex.Message;
                 }
-            }
+                throw new InvalidOperationException(error);
+            }            
 
-            service = new CalendarService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential,
-                ApplicationName = ApplicationName,
-            });
+            return service;
         }
 
-
-
-        public List<dataEvent> GetEvents(string nameEmployee, string department, DateTime start, DateTime end)
+        public List<dataMeeting> GetEvents(string nameEmployee, string department, DateTime start, DateTime end)
         {
-            List<dataEvent> events = new List<dataEvent>();
+            List<dataMeeting> meetings = new List<dataMeeting>();
             List<googleEvent> googleEventlist = new List<googleEvent>();
             Predicate<googleEvent> predicate;
 
@@ -88,45 +108,45 @@ namespace NetCalendar.DataLayer
 
             if (googleEvents.Items != null)
             {
-                if (nameEmployee != null)
+                if (nameEmployee != null)     //рабочие смены для определенного сотрудника
                 {
-                    predicate = new Predicate<googleEvent>(ev =>
-                                                                ev.Description.Equals(department) &&
-                                                                IsConsistEmployee(ev, nameEmployee)
+                    predicate = new Predicate<googleEvent>(_event =>
+                                                                _event.Description.Equals(department) &&
+                                                                IsConsistEmployee(_event, nameEmployee)
                                                            );
                 }
-                else
+                else                          //рабочие смены за весь департамент
                 {
-                    predicate = new Predicate<googleEvent>(ev => ev.Description.Equals(department));
+                    predicate = new Predicate<googleEvent>(_event => _event.Description.Equals(department));
                 }
            
                 googleEventlist = googleEvents.Items.ToList().FindAll(predicate);
 
-                foreach (googleEvent ev in googleEventlist)
+                foreach (googleEvent _event in googleEventlist)
                 {
-                    events.Add(ToDataEvent(ev));
+                    meetings.Add(ToDataMeeting(_event));
                 }
             }            
-            return events;
+            return meetings;
         }
 
 
-        public async Task<string> SaveUpdateEventAsync(dataEvent dataEv)
+        public async Task<string> SaveUpdateEventAsync(dataMeeting meeting)
         {
-            googleEvent gEvent = GetEvent(dataEv.GoogleEventId);
-            googleEvent newGEvent = new googleEvent();
-            ToGoogleEvent(dataEv, newGEvent);
+            googleEvent gEvent = GetEvent(meeting.GoogleEventId);
+            googleEvent newGoogleEvent = new googleEvent();
+            ToGoogleEvent(meeting, newGoogleEvent);
 
             if (gEvent != null)
             {
                 DelEvent(gEvent.Id);
             }
 
-            EventsResource.InsertRequest insertRequest = service.Events.Insert(newGEvent, "primary");
-            newGEvent = insertRequest.Execute();
+            EventsResource.InsertRequest insertRequest = service.Events.Insert(newGoogleEvent, "primary");
+            newGoogleEvent = insertRequest.Execute();
 
-            await notificationService.SendInvitesAsync(dataEv);
-            return newGEvent.Summary;
+            await notificationService.SendInvitesAsync(meeting);
+            return newGoogleEvent.Summary;
         }
 
 
@@ -138,25 +158,7 @@ namespace NetCalendar.DataLayer
         }
 
 
-        CalendarListEntry GetCalendar()
-        {
-            CalendarListResource.GetRequest getRequest = service.CalendarList.Get("primary");
-            CalendarListEntry calendar; 
-
-            try
-            {
-                calendar = getRequest.Execute();
-                return calendar;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-
-
-        Events GetEvents(DateTime start, DateTime end)
+        private Events GetEvents(DateTime start, DateTime end)
         {
             EventsResource.ListRequest request = service.Events.List("primary");
             request.TimeMin = start;
@@ -188,8 +190,7 @@ namespace NetCalendar.DataLayer
 
             try
             {
-                googleEvent @event = request.Execute();
-                return @event;
+                return request.Execute();
             }
             catch
             {
@@ -198,200 +199,119 @@ namespace NetCalendar.DataLayer
         }
 
 
-               
-        string GetCol(string colId)
-        {
-            string color;
-
-            switch (colId)
-            {
-                case "1":
-                        color = colorName.CornflowerBlue.Name;
-                    break;
-                case "2":
-                    color = colorName.Green.Name;
-                    break;
-                case "3":
-                    color = colorName.DarkOrchid.Name;
-                    break;
-                case "4":
-                    color = colorName.HotPink.Name;
-                    break;
-                case "5":
-                    color = colorName.Goldenrod.Name;
-                    break;
-                case "6":
-                    color = colorName.Orange.Name;
-                    break;
-                case "8":
-                    color = colorName.DimGray.Name;
-                    break;
-                case "9":
-                    color = colorName.DarkSlateBlue.Name;
-                    break;
-                case "10":
-                    color = colorName.SeaGreen.Name;
-                    break;
-                case "11":
-                    color = colorName.Red.Name;
-                    break;
-                default:
-                    color = colorName.Blue.Name;
-                    break;
-            }
-
-
-            return color;
-        }
-
-
-        string GetColId(string col)
-        {
-            string color;
-
-            switch (col)
-            {
-                case "CornflowerBlue":
-                    color = "1";
-                    break;
-                case "Green":
-                    color = "2";
-                    break;
-                case "DarkOrchid":
-                    color = "3";
-                    break;
-                case "HotPink":
-                    color = "4";
-                    break;
-                case "Goldenrod":
-                    color = "5";
-                    break;
-                case "Orange":
-                    color = "6";
-                    break;
-                case "DimGray":
-                    color = "8";
-                    break;
-                case "DarkSlateBlue":
-                    color = "9";
-                    break;
-                case "SeaGreen":
-                    color = "10";
-                    break;
-                case "Red":
-                    color = "11";
-                    break;
-                default:
-                    color = "7";
-                    break;
-            }
-            return color;
-        }
-
-
-        void ToGoogleEvent(dataEvent dataEvent, googleEvent googleEvent)
+        void ToGoogleEvent(dataMeeting dataMeeting, googleEvent googleEvent)
         {
             #region Приводим время клиента в соответствие с часовым поясом сервера
             TimeSpan timeSpanServer = DateTimeOffset.Now.Offset;
-            TimeSpan timeSpanClient = new TimeSpan(dataEvent.Offset, 0, 0);
+            TimeSpan timeSpanClient = new TimeSpan(dataMeeting.Offset, 0, 0);
             DateTime start;
             DateTime end;
             
-            if (timeSpanServer.Hours != timeSpanClient.Hours)
+            if (timeSpanServer.Hours != timeSpanClient.Hours *(-1))
             {
-                start = dataEvent.Start.Add(timeSpanClient);
-                end = dataEvent.End.Add(timeSpanClient);
+                start = dataMeeting.Start.Add(timeSpanClient);
+                end = dataMeeting.End.Add(timeSpanClient);
             }
             else
             {
-                start = dataEvent.Start;
-                end = dataEvent.End;
+                start = dataMeeting.Start;
+                end = dataMeeting.End;
             }
             #endregion
 
             
 
             //название департамента в description
-            googleEvent.Description = dataEvent.Department;
+            googleEvent.Description = dataMeeting.Department;
 
-            googleEvent.ColorId = GetColId(dataEvent.ThemeColor);            
+            googleEvent.ColorId = GoogleColors.First(keyValueColor => keyValueColor.Value == dataMeeting.ThemeColor).Key;
             googleEvent.Start = new EventDateTime() { DateTime = start };
             googleEvent.End = new EventDateTime() { DateTime = end };
-            googleEvent.Location = dataEvent.DestLat + " " + dataEvent.DestLong;
+            googleEvent.Location = dataMeeting.DestLat + " " + dataMeeting.DestLong;
 
             //заголовок и адрес храним в поле summary
-            googleEvent.Summary = dataEvent.Subject + " @" + dataEvent.Adress;
+            googleEvent.Summary = dataMeeting.Subject + " @" + dataMeeting.Adress;
 
-            #region прикрепляем к событию сотрудников --- Attendees
-            if (dataEvent.Employees.Count>0)
+            //прикрепляем к событию сотрудников --- Attendees
+            googleEvent.Attendees = AddAttendees(dataMeeting);
+        }
+
+
+        private List<EventAttendee> AddAttendees(dataMeeting dataMeeting)
+        {
+            List<EventAttendee> attendees = new List<EventAttendee>();
+
+            if (dataMeeting.Employees.Count > 0)
             {
-                googleEvent.Attendees = new List<EventAttendee>();
-                EventAttendee att;
+               EventAttendee attendy;
                 int number = 0;
 
-                foreach(Employee e in dataEvent.Employees)
+                foreach (Employee e in dataMeeting.Employees)
                 {
-                    att = new EventAttendee();
-                    att.Comment = e.Name;
+                    attendy = new EventAttendee();
+                    attendy.Comment = e.Name;
 
                     if (e.Email == null || e.Email.Equals(""))
                     {
-                        att.Email = number.ToString() + "notHaveEmail@not.com";//email-заглушка
+                        attendy.Email = number.ToString() + "notHaveEmail@not.com";     //если нет email, передаем фиктивный
                         number++;
                     }
                     else
                     {
-                        if(googleEvent.Attendees.Count>0)
+                        if (attendees.Count > 0)
                         {
-                            foreach (EventAttendee existAtt in googleEvent.Attendees)
+                            foreach (EventAttendee existAtt in attendees)
                             {
-                                if(existAtt.Email == e.Email)
+                                if (existAtt.Email == e.Email)               //нельзя передавать дубликат, заменяем на фиктивный
                                 {
-                                    //email-заглушка для повторяющихся email
                                     e.Email = number.ToString() + "notHaveEmail@not.com";
                                     number++;
                                 }
                             }
                         }
-                            att.Email = e.Email;
+                        attendy.Email = e.Email;
                     }
-                    googleEvent.Attendees.Add(att);
+                    attendees.Add(attendy);
                 }
             }
-            #endregion
+            return attendees;
         }
 
-
-        dataEvent ToDataEvent(googleEvent googleEvent)
+        private dataMeeting ToDataMeeting(googleEvent googleEvent)
         {
-            
-            dataEvent @event = new dataEvent();
+
+            dataMeeting meeting = new dataMeeting();
+
             string geolat = googleEvent.Location != null ? googleEvent.Location.Split(' ')[0] : "";
             string geolongt = googleEvent.Location != null ? googleEvent.Location.Split(' ')[1] : "";
             string[] subjectAndAdress = googleEvent.Summary.Split('@');
 
-            @event.Department = googleEvent.Description;
-            @event.Subject = subjectAndAdress[0];
+            meeting.Department = googleEvent.Description;
+            meeting.Subject = subjectAndAdress[0];
 
-            @event.Start = GetDateTime(googleEvent.Start);
-            @event.End = GetDateTime(googleEvent.End);
+            meeting.Start = ((DateTime)googleEvent.Start.DateTime).ToUniversalTime();
+            meeting.End = ((DateTime)googleEvent.End.DateTime).ToUniversalTime();
+           
 
-            @event.ThemeColor = GetCol(googleEvent.ColorId);
-            @event.GoogleEventId = googleEvent.Id;
-            @event.DestLat = geolat;
-            @event.DestLong = geolongt;
+            meeting.ThemeColor = GoogleColors.First(keyValueColor => keyValueColor.Key == googleEvent.ColorId).Value;
+            meeting.GoogleEventId = googleEvent.Id;
+            meeting.DestLat = geolat;
+            meeting.DestLong = geolongt;
 
-            
-            if(subjectAndAdress.Count()>1)
-                @event.Adress = subjectAndAdress[1];
+
+            if (subjectAndAdress.Count() > 1)
+            {
+                meeting.Adress = subjectAndAdress[1];
+            }
             else
-                @event.Adress = " ";
-
-
+            {
+                meeting.Adress = " ";
+            }
+            meeting.Adress = meeting.Start.ToString();
             //получаем прикрепленных сотрудников
             if (googleEvent.Attendees!=null)
             {
-                @event.Employees = new List<Employee>();
+                meeting.Employees = new List<Employee>();
                 foreach(EventAttendee att in googleEvent.Attendees)
                 {
                     Employee temp = new Employee()
@@ -400,50 +320,25 @@ namespace NetCalendar.DataLayer
                         Email = att.Email,
                         Name = att.Comment                   
                     };
-
-                    @event.Employees.Add(temp);
                 }
             }
-            return @event;
-        }
-
-
-        DateTime GetDateTime(EventDateTime eventDateTime)
-        {
-            DateTime dt;
-           
-            if(eventDateTime.DateTime!=null)
-            {
-                dt = (DateTime)eventDateTime.DateTime;
-            }
-            else
-            {
-                int y = Int32.Parse(eventDateTime.Date.Substring(0, 4));
-                int m = Int32.Parse(eventDateTime.Date.Substring(5, 2));
-                int d = Int32.Parse(eventDateTime.Date.Substring(8, 2));
-
-                dt = new DateTime(y, m, d);
-            }
-            return dt;
+            return meeting;
         }
 
 
         bool IsConsistEmployee(googleEvent @event, string nameemployee)
         {
-            bool answer = false;
-
             if(@event.Attendees!=null)
             {
                 foreach(EventAttendee att in @event.Attendees)
                 {
                     if (att.Comment.Equals(nameemployee))
                     {
-                        answer = true;
-                        return answer;
+                        return true;
                     }
                 }
             }
-            return answer;
+            return false;
         }
     }
 }

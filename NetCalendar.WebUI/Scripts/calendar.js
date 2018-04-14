@@ -14,8 +14,8 @@
     }
     var t = new Date();
     
-    var currentTimeZoneOffset = t.getTimezoneOffset() / 60 * (-1);
-   
+    var currentTimeZoneOffset = t.getTimezoneOffset() / 60;
+    
     $("#jqxWidget").jqxDropDownList({
         template: "warning",
         selectedIndex: 0,
@@ -44,16 +44,19 @@
         events = [];
         $.ajax({
             type: "GET",
-            url: "/home/GetEvents",
+            url: "/home/GetMeetings",
             success: function (data) {
                 $.each(data, function (i, v) {
 
+                    
                     var startTime = moment(v.Start).toDate();
                     var endTime = moment(v.End).toDate();
 
-                    startTime.setHours(startTime.getHours() + currentTimeZoneOffset);
-                    endTime.setHours(endTime.getHours() + currentTimeZoneOffset);
+                    
+                    startTime.setHours(startTime.getHours() - currentTimeZoneOffset);
+                    endTime.setHours(endTime.getHours() - currentTimeZoneOffset);
 
+                    
                     events.push({
                         Id: v.Id,
                         googleEventId: v.GoogleEventId,
@@ -61,8 +64,8 @@
                         title: v.Subject,
                         subject: v.Subject,
                         description: v.EmployeesString,
-                        start: startTime,
-                        end: endTime,
+                        start: moment(v.Start),
+                        end: moment(v.End),
                         color: v.ThemeColor,
                         destinationLat: v.DestLat,
                         destinationLong: v.DestLong,
@@ -193,13 +196,13 @@
         var e = String(end.format(defaultFormat));
         $.ajax({
             type: "POST",
-            url: '/home/SumEvent',
+            url: '/home/GetMeetingsDuration',
             data: { 'start': s, 'end': e },
             success: function (data) {                
                     alert(data.summa);
             },
             error: function () {
-                alert('sum event Failed');
+                alert('Get Meetings Duration Failed');
             }
         })
     }
@@ -218,7 +221,7 @@
         if (selectedEvent != null && confirm('Are you sure?')) {
             $.ajax({
                 type: "POST",
-                url: '/home/DeleteEvent',
+                url: '/home/DeleteMeeting',
                 data: { 'googleId': selectedEvent.googleEventId, 'department': selectedEvent.department },
                 success: function (data) {
                     if (data.status) {
@@ -310,12 +313,12 @@
 
         
 
-        var startHours = startDate.getHours() - currentTimeZoneOffset;
-        var endHours = endDate.getHours() - currentTimeZoneOffset;
+        //var startHours = startDate.getHours() - currentTimeZoneOffset;
+        //var endHours = endDate.getHours() - currentTimeZoneOffset;
 
        
-        startDate.setHours(startHours);
-        endDate.setHours(endHours);
+        //startDate.setHours(startHours);
+        //endDate.setHours(endHours);
 
        
         var data = {
@@ -323,18 +326,17 @@
             GoogleEventId: $('#hdGoogleEventId').val().trim(),
             Department: $('#txtDepartment').val().trim(),
             Subject: $('#txtSubject').val().trim(),
-            Start: moment(startDate).toISOString(),
-            End: moment(endDate).toISOString(),
+            Start: $('#txtStart').val().trim(),
+            End: $('#txtEnd').val().trim(),
             Description: $('#txtDescription').val(),
             ThemeColor: $('#ddThemeColor').val(),
             DestLat: $('#hdDestinationLat').val(),
             DestLong: $('#hdDestinationLong').val(),
-            Offset: 0,
+            Offset: currentTimeZoneOffset,
             Adress: $("#adr").val(),
             allDay: false
         }
 
-        
         SaveEvent(data);
         selectedEvent = null;
     })
@@ -342,15 +344,19 @@
     function SaveEvent(data) {
         $.ajax({
             type: "POST",
-            url: '/home/SaveEventAsync',
+            url: '/home/SaveMeetingAsync',
             data: data,
             success: function (data) {
-                alert(data.mess);                    
+
+                if (data.mess != "") {
+                    alert(data.mess); 
+                }
+                                   
                 FetchEventAndRenderCalendar();
                 $('#myModalSave').modal('hide');
             },
             error: function () {
-                alert('SaveEvent Failed');
+                alert('Save Meeting Failed');
                 FetchEventAndRenderCalendar();
                 $('#myModalSave').modal('hide');
             }

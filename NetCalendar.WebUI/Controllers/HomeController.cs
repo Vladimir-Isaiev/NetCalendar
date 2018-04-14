@@ -19,11 +19,11 @@ namespace NetCalendar.WebUI.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly NetCalendarService repository;
+        private readonly NetCalendarService netCalendarService;
 
-        public HomeController(NetCalendarService repo)
+        public HomeController(NetCalendarService service)
         {
-            repository = repo;
+            netCalendarService = service;
         }
 
         
@@ -36,8 +36,8 @@ namespace NetCalendar.WebUI.Controllers
         [Authorize]
         public ActionResult Calendar()
         {
-            ViewBag.Department = _User.Department;
-            ViewBag.IsManager = _User.IsManager.ToString();
+            ViewBag.Department = CurrentUser.Department;
+            ViewBag.IsManager = CurrentUser.IsManager.ToString();
             return View();
         }
 
@@ -46,44 +46,45 @@ namespace NetCalendar.WebUI.Controllers
 
        
 
-        public JsonResult GetEvents()
+        public JsonResult GetMeetings()
         {
-            List<Event> events;
-            if (_User.IsManager)
-                events = repository.GetEventsOfDepartment(_User.Department, DateTime.Now.AddDays(-30), DateTime.Now.AddDays(365));
+            List<Meeting> meetings;
+            if (CurrentUser.IsManager)
+                meetings = netCalendarService.GetMeetingsOfDepartment(CurrentUser.Department, DateTime.Now.AddDays(-30), DateTime.Now.AddDays(365));
             else
-                events = repository.GetEventsOfEmployee(_User.ToEmployee(), DateTime.Now.AddDays(-30), DateTime.Now.AddDays(365));
+                meetings = netCalendarService.GetMeetingsOfEmployee(CurrentUser.ToEmployee(), DateTime.Now.AddDays(-30), DateTime.Now.AddDays(365));
 
            
-            return new JsonResult { Data = events, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+            return new JsonResult { Data = meetings, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
         }
 
        
 
 
         [HttpPost]
-        public async System.Threading.Tasks.Task<JsonResult> SaveEventAsync(Event e)
+        public async System.Threading.Tasks.Task<JsonResult> SaveMeetingAsync(Meeting newMeeting)
         {
             bool status = false;
-            string[] names;
-            string message = "Please wait";
+            List<string> employeesNames;
+            string message = "";
 
 
             List<Employee> employees = new List<Employee>();
-            List<AppUser> users = UserManager.GetUsersByDepartment(e.Department);
+            List<AppUser> users = UserManager.GetUsersByDepartment(newMeeting.Department);
 
-            if (e.Description != null)
+            if (newMeeting.Description != null)
             {
-                names = e.Description.Trim().Trim(',').Split(',').ToArray();
+                char[] toTrim = { ' ', ',' };
+                employeesNames = newMeeting.Description.Trim(toTrim).Split(',').ToList();
 
 
-
-                for (int i = 0; i < names.Count(); ++i)
+                employeesNames.ForEach(delegate (string name)
                 {
-                    names[i] = names[i].Trim() + "#" + e.Department;
-                    employees.Add(UserManager.FindByName(names[i]).ToEmployee());
-                }
-                e.Employees = employees;
+                    name = name.Trim() + "#" + newMeeting.Department;
+                    employees.Add(UserManager.FindByName(name).ToEmployee());
+                });
+
+                newMeeting.Employees = employees;
             }
 
 
@@ -91,13 +92,13 @@ namespace NetCalendar.WebUI.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    await repository.SaveUpdateEventAsync(e);
+                    await netCalendarService.SaveUpdateEventAsync(newMeeting);
                     status = true;
                 }
             }
             catch (Exception ex)
             {
-                message = ex.Message;
+                message = "Error: " + ex.Message;
                 while (ex.InnerException != null)
                 {
                     string temp = ex.Message;
@@ -112,15 +113,16 @@ namespace NetCalendar.WebUI.Controllers
 
 
         [HttpPost]
-        public JsonResult DeleteEvent(string googleId, string department)
+        public JsonResult DeleteMeeting(string googleId, string department)
         {
             bool status = false;
             string message = "";
             try
             {
-                repository.DeleteEvent(googleId, department);
+                netCalendarService.DeleteMeeting(googleId, department);
                 status = true;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 message = ex.Message;
                 while (ex.InnerException != null)
@@ -144,33 +146,33 @@ namespace NetCalendar.WebUI.Controllers
         }
 
         [HttpPost]
-        public JsonResult SumEvent(string start, string end)//"09/03/2018 0:00"
+        public JsonResult GetMeetingsDuration(string start, string end)//"09/03/2018 0:00"   DD/MM/YYYY
         {
-            DateTime dStart = new DateTime(
-                Int32.Parse(start.Substring(6, 4)),
-                Int32.Parse(start.Substring(3, 2)),
-                Int32.Parse(start.Substring(0, 2))
-                );
-
+            //DateTime dStart = new DateTime(
+            //    Int32.Parse(start.Substring(6, 4)),
+            //    Int32.Parse(start.Substring(3, 2)),
+            //    Int32.Parse(start.Substring(0, 2))
+            //    );
+            DateTime dStart = DateTime.ParseExact(start, "DD/MM/YYY hh:mm", null);
             DateTime dEnd = new DateTime(
                Int32.Parse(end.Substring(6, 4)),
                Int32.Parse(end.Substring(3, 2)),
                Int32.Parse(end.Substring(0, 2))
                );
             int summ;
-            string sum;
-            if (_User.IsManager)
+            string _summa;
+            if (CurrentUser.IsManager)
             {
-                summ = repository.SumEventDepartment(_User.Department, dStart, dEnd);
-                sum = "Number of hours worked by the department " + _User.Department + ": "+summ.ToString();
+                summ = netCalendarService.GetMeetingsDuration(CurrentUser.Department, dStart, dEnd);
+                _summa = "Number of hours worked by the department " + CurrentUser.Department + ": "+summ.ToString();
             }
             else
             {
-                summ = repository.SumEventUser(_User.ToEmployee(), dStart, dEnd);
-                sum = "Number of hours worked by " + _User.SimplyName + ": " + summ.ToString();
+                summ = netCalendarService.GetMeetingsDuration(CurrentUser.ToEmployee(), dStart, dEnd);
+                _summa = "Number of hours worked by " + CurrentUser.SimplyName + ": " + summ.ToString();
             }
 
-            return new JsonResult { Data = new { summa = sum } };
+            return new JsonResult { Data = new { summa = _summa } };
         }
 
 
@@ -190,7 +192,7 @@ namespace NetCalendar.WebUI.Controllers
             }
         }
 
-        private AppUser _User
+        private AppUser CurrentUser
         {
             get
             {

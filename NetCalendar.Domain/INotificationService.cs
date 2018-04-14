@@ -8,6 +8,6 @@ namespace NetCalendar.Domain
 {
     public interface INotificationService
     {
-         Task SendInvitesAsync(Event gEvent);
+         Task SendInvitesAsync(Meeting gEvent);
     }
 }

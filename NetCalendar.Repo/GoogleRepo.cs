@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NetCalendar.Repo
 {
-    public class GoogleRepo : IServiceEvent
+    public class GoogleRepo : IServiceMeeting
     {
         protected GoogleService googleService;
 
@@ -19,22 +19,18 @@ namespace NetCalendar.Repo
         }
 
 
-        public List<Event> GetEvents(string nameEmp, string department, DateTime start, DateTime end)
+        public List<Meeting> GetMeetings(string nameEmp, string department, DateTime start, DateTime end)
         {
-            List<Event> events = new List<Event>();
-
-            events = googleService.GetEvents(nameEmp, department, start, end);
-    
-            return events;
+            return googleService.GetEvents(nameEmp, department, start, end);
         }
 
 
-        public async Task<string> SaveUpdateEventAsync(Event ev)
+        public async Task<string> SaveUpdateMeetingAsync(Meeting ev)
         {
             return await googleService.SaveUpdateEventAsync(ev);
         }
 
-        public string DeleteEvent(string eventId)
+        public string DeleteMeeting(string eventId)
         {
             return googleService.DelEvent(eventId);
         }

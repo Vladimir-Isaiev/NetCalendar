@@ -17,7 +17,7 @@ namespace NetCalendar.WebUI.Controllers
     {
         public ActionResult Index()
         {
-            AppUser user = _User;
+            AppUser user = CurrentUser;
             List<AppUser> users = UserManager.GetUsersByDepartment(user.Department);
             return View(users);
         }
@@ -34,7 +34,7 @@ namespace NetCalendar.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                string department = _User.Department;
+                string department = CurrentUser.Department;
 
                 AppUser user = new AppUser { UserName = model.Name+"#"+department, Department = department };
 
@@ -100,7 +100,7 @@ namespace NetCalendar.WebUI.Controllers
             AppUser user = await UserManager.FindByIdAsync(id);
             if (user != null)
             {
-                user.UserName = SimplyName + "#"+_User.Department;
+                user.UserName = SimplyName + "#"+CurrentUser.Department;
                 
                 IdentityResult result = await UserManager.UpdateAsync(user);
 
@@ -141,7 +141,7 @@ namespace NetCalendar.WebUI.Controllers
             }
         }
 
-        private AppUser _User
+        private AppUser CurrentUser
         {
             get
             {
