@@ -22,8 +22,7 @@ namespace NetCalendar.DataLayer
     {
         CalendarService service;
 
-        //private Dictionary<string, string> GoogleColors;
-
+        
         private enum GoogleColor {
             CornflowerBlue  = 1,
             Green = 2,
