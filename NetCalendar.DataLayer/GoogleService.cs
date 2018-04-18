@@ -22,27 +22,27 @@ namespace NetCalendar.DataLayer
     {
         CalendarService service;
 
-        private Dictionary<string, string> GoogleColors;
+        //private Dictionary<string, string> GoogleColors;
 
-       
+        private enum GoogleColor {
+            CornflowerBlue  = 1,
+            Green = 2,
+            DarkOrchid = 3,
+            HotPink = 4,
+            Goldenrod = 5,
+            Orange = 6,
+            Blue = 7,
+            DimGray = 8,
+            DarkSlateBlue = 9,
+            SeaGreen = 10,
+            Red = 11};
+
+        Type googleColorsType = typeof(GoogleColor);
+
+
         public GoogleService(string path_dir, INotificationService notificationService)
         {
             service = GetService(path_dir);
-            
-            GoogleColors = new Dictionary<string, string>()
-            {
-                {"1", "CornflowerBlue" },
-                {"2", "Green" },
-                {"3", "DarkOrchid" },
-                {"4", "HotPink" },
-                {"5", "Goldenrod" },
-                {"6", "Orange" },
-                {"7", "Blue" },
-                {"8", "DimGray" },
-                {"9", "DarkSlateBlue" },
-                {"10", "SeaGreen" },
-                {"11", "Red" }
-            };
         }
 
         private CalendarService GetService(string path_dir)
@@ -221,7 +221,10 @@ namespace NetCalendar.DataLayer
             //название департамента в description
             googleEvent.Description = dataMeeting.Department;
 
-            googleEvent.ColorId = GoogleColors.First(keyValueColor => keyValueColor.Value == dataMeeting.ThemeColor).Key;
+            
+            int color = (int)Enum.Parse(googleColorsType, dataMeeting.ThemeColor);
+            googleEvent.ColorId = color.ToString();
+            
             googleEvent.Start = new EventDateTime() { DateTime = start };
             googleEvent.End = new EventDateTime() { DateTime = end };
             googleEvent.Location = dataMeeting.DestLat + " " + dataMeeting.DestLong;
@@ -288,9 +291,11 @@ namespace NetCalendar.DataLayer
 
             meeting.Start = ((DateTime)googleEvent.Start.DateTime).ToUniversalTime();
             meeting.End = ((DateTime)googleEvent.End.DateTime).ToUniversalTime();
-           
 
-            meeting.ThemeColor = GoogleColors.First(keyValueColor => keyValueColor.Key == googleEvent.ColorId).Value;
+
+            
+            meeting.ThemeColor = Enum.GetName(googleColorsType, Int32.Parse(googleEvent.ColorId));
+            
             meeting.GoogleEventId = googleEvent.Id;
             meeting.DestLat = geolat;
             meeting.DestLong = geolongt;
